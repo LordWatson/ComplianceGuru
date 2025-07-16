@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,5 +22,25 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // models
+        $this->configureModels();
+    }
+
+    /**
+     * Configure the application's models.
+     */
+    private function configureModels(): void
+    {
+        /*
+         * models should prevent lazy loading
+         * stops silently discarding attributes, and accessing missing attributes
+         * */
+        Model::shouldBeStrict();
+
+        /*
+         * removes annoying mass assignable restrictions
+         * */
+        Model::unguard();
     }
 }

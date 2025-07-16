@@ -20,11 +20,49 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // subscription plans table
+        Schema::create('subscription_plans', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('description')->nullable();
+            $table->decimal('price');
+            $table->string('interval');
+            $table->string('trial_period_days')->nullable();
+            $table->timestamps();
+        });
+
+        // modules table
+        Schema::create('modules', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('description')->nullable();
+            $table->timestamps();
+        });
+
+        // subscription plan modules table
+        Schema::create('subscription_plan_modules', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('subscription_plan_id')->references('id')->on('subscription_plans');
+            $table->foreignId('module_id')->references('id')->on('modules');
+            $table->timestamps();
+        });
+
+        // organizations table
+        Schema::create('organizations', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('industry');
+            $table->integer('size');
+            $table->foreignId('plan_id')->references('id')->on('subscription_plans');
+            $table->timestamps();
+        });
+
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
             $table->foreignId('role_id')->references('id')->on('roles');
+            $table->foreignId('org_id')->references('id')->on('organizations');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
@@ -70,9 +108,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('roles');
+        Schema::dropIfExists('subscription_plans');
+        Schema::dropIfExists('modules');
+        Schema::dropIfExists('subscription_plan_modules');
+        Schema::dropIfExists('organizations');
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('sessions');
         Schema::dropIfExists('permissions');
         Schema::dropIfExists('role_permissions');
     }

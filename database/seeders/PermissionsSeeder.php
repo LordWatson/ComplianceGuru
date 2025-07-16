@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Module;
 use Illuminate\Database\Seeder;
 use App\Models\Permission;
 use App\Models\Role;
@@ -13,25 +14,31 @@ class PermissionsSeeder extends Seeder
      */
     public function run(): void
     {
-        $permissions = [
-            ['name' => 'View Users', 'description' => 'Permission to view users', 'action' => 'view', 'module' => 'users'],
-            ['name' => 'Edit Users', 'description' => 'Permission to edit users', 'action' => 'edit', 'module' => 'users'],
-            ['name' => 'Delete Users', 'description' => 'Permission to delete users', 'action' => 'delete', 'module' => 'users'],
-            ['name' => 'View Roles', 'description' => 'Permission to view roles', 'action' => 'view', 'module' => 'roles'],
-            ['name' => 'Edit Roles', 'description' => 'Permission to edit roles', 'action' => 'edit', 'module' => 'roles'],
-            ['name' => 'Delete Roles', 'description' => 'Permission to delete roles', 'action' => 'delete', 'module' => 'roles'],
-            ['name' => 'View Permissions', 'description' => 'Permission to view permissions', 'action' => 'view', 'module' => 'permissions'],
-            ['name' => 'Edit Permissions', 'description' => 'Permission to edit permissions', 'action' => 'edit', 'module' => 'permissions'],
-            ['name' => 'Delete Permissions', 'description' => 'Permission to delete permissions', 'action' => 'delete', 'module' => 'permissions'],
-        ];
-
+        $modules = Module::all();
         $adminRole = Role::where('name', 'Admin')->first();
 
-        foreach ($permissions as $permissionData) {
-            $permission = Permission::create($permissionData);
+        if($modules->isEmpty() || !$adminRole) return;
 
-            // give all permissions to the admin role
-            $adminRole->permissions()->attach($permission->id);
+        $permissionsData = [];
+
+        foreach($modules as $module){
+            $moduleNameLower = strtolower($module->name);
+
+            foreach(['view', 'edit', 'delete'] as $action){
+                $permissionsData[] = [
+                    'name' => ucfirst($action) . ' ' . $module->name,
+                    'description' => 'Permission to ' . $action . ' ' . $module->name,
+                    'action' => $action,
+                    'module' => $moduleNameLower,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
         }
+
+        Permission::insert($permissionsData);
+
+        $permissionIds = Permission::whereIn('name', array_column($permissionsData, 'name'))->pluck('id');
+        $adminRole->permissions()->sync($permissionIds);
     }
 }
