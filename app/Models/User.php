@@ -35,4 +35,21 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Organization::class, 'org_id');
     }
+
+    public function modules()
+    {
+        return $this->org->plan->modules;
+    }
+
+    public function hasPermission(string $action, string $moduleName): bool
+    {
+        $role = $this->role;
+
+        if (!$role) return false;
+
+        return $role->permissions()
+            ->where('module', $moduleName)
+            ->where('action', $action)
+            ->exists();
+    }
 }
